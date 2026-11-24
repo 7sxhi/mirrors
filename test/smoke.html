@@ -1,0 +1,14 @@
+<!doctype html><meta charset="utf-8"><title>smoke</title>
+<pre id="out">not run</pre>
+<script src="../core.js"></script>
+<script src="../v1/stages_v1.js"></script>
+<script>
+// v1 の盤で、JS の規則の解の数が Python の数と同じかを確かめる
+var lines = [];
+for (var i = 0; i < STAGES.length; i++) {
+  var st = STAGES[i];
+  var n = FoldCore.countSolutions({ w: st.w, h: st.h, cells: st.cells.slice(), ox: 0, oy: 0 }, st.target, st.limit);
+  lines.push(st.name + ' js=' + n + ' py=' + st.nsol + (n === st.nsol ? ' OK' : ' NG'));
+}
+document.getElementById('out').textContent = lines.join('\n');
+</script>

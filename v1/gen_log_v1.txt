@@ -1,0 +1,5 @@
+はじめの一枚 tries 5 target 103 nsol 21 p 0.3667 answer [('V', 1), ('V', 1), ('V', 1)]
+六つ切り tries 1 target 308 nsol 6 p 0.0113 answer [('V', 3), ('H', 2), ('H', 1)]
+八つ切り tries 1 target 309 nsol 3 p 0.0005 answer [('H', 4), ('V', 4), ('H', 1), ('H', 1)]
+ひび cell 29 203 -> 302 nsol 1 p 0.0001 first-move-differs 1 answer [('H', 5), ('V', 3), ('H', 2), ('H', 1)]
+書き出し stages.js

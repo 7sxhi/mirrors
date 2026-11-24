@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- 折り紙盤のアイコン: 4色のマスの紙の右上を折った形 -->
+  <rect width="64" height="64" rx="12" fill="#1c2838"/>
+  <rect x="10" y="10" width="21" height="21" rx="3" fill="#d1452a"/>
+  <rect x="10" y="33" width="21" height="21" rx="3" fill="#e0a00e"/>
+  <rect x="33" y="33" width="21" height="21" rx="3" fill="#2d5cb0"/>
+  <path d="M33 10 H54 V31 Z" fill="#fdfdfb"/>
+  <path d="M33 10 L54 31 H33 Z" fill="#c4cad6"/>
+</svg>

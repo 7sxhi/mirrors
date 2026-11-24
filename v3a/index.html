@@ -1,0 +1,661 @@
+<title>折り紙盤</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">
+<style>
+/* レイアウト: 1列。机（背景）の上に紙が1枚。折り線のつまみは紙の上辺と左辺の外に並ぶ。ひびの面だけ、元の盤を下に小さく並べる */
+:root {
+  --desk: #e4e8ee;
+  --paper: #fdfdfb;
+  --paper-back: #eef0f3;
+  --paper-edge: #c4cad6;
+  --ink: #1c2838;
+  --muted: #5a6577;
+  --line: #7f8899;
+  --aka: #d1452a;
+  --ao: #2d5cb0;
+  --ki: #e0a00e;
+  --ki-ink: #3a2a00;
+  --accent: #2d5cb0;
+  --ok: #23814f;
+  --warn: #c2410c;
+  --diff: #c026d3;
+  --shade: rgba(28, 40, 56, 0.16);
+  --font-display: "Dela Gothic One", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --desk: #13161b; --paper: #262b34; --paper-back: #1d2129; --paper-edge: #3b4352;
+    --ink: #e7ebf1; --muted: #9ba5b5; --line: #8690a2;
+    --aka: #ee6a4c; --ao: #6e9ae6; --ki: #f2bd3a; --ki-ink: #2b1f00;
+    --accent: #6e9ae6; --ok: #4fbf84; --warn: #f08a5d; --diff: #e879f9; --shade: rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --desk: #13161b; --paper: #262b34; --paper-back: #1d2129; --paper-edge: #3b4352;
+  --ink: #e7ebf1; --muted: #9ba5b5; --line: #8690a2;
+  --aka: #ee6a4c; --ao: #6e9ae6; --ki: #f2bd3a; --ki-ink: #2b1f00;
+  --accent: #6e9ae6; --ok: #4fbf84; --warn: #f08a5d; --diff: #e879f9; --shade: rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+body {
+  background: var(--desk); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.6;
+}
+.wrap {
+  max-width: 600px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+header { display: flex; flex-direction: column; gap: 4px; }
+h1 { font-family: var(--font-display); font-weight: 400; font-size: 2rem; letter-spacing: 0.08em; margin: 0; line-height: 1.2; }
+.lede { margin: 0; color: var(--muted); max-width: 36em; }
+.picker { display: flex; flex-direction: column; gap: 8px; }
+.prow { display: grid; grid-template-columns: 4.6em minmax(0, 1fr); gap: 8px; align-items: center; }
+.plabel { font-weight: 700; font-size: 0.82rem; line-height: 1.25; }
+.plabel small { display: block; font-weight: 400; color: var(--muted); font-size: 0.72rem; }
+.pbtns { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; }
+.stage-btn {
+  font: inherit; color: var(--ink); background: transparent; border: 1px solid var(--paper-edge);
+  border-radius: 6px; padding: 4px 2px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0; min-width: 0;
+}
+.stage-btn .nm { font-weight: 700; font-size: 0.85rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stage-btn .sz { font-size: 0.68rem; color: var(--muted); line-height: 1.25; text-align: center; }
+.stage-btn .sz span { white-space: nowrap; }
+.stage-btn .sz .tag-c { color: var(--warn); font-weight: 700; }
+.stage-btn .sz .tag-h { color: var(--diff); font-weight: 700; }
+.stage-btn .sz .tag-o { color: var(--accent); font-weight: 700; }
+.note .t { color: var(--ok); font-weight: 700; }
+.note .o { color: var(--accent); font-weight: 700; }
+.stage-btn[aria-pressed="true"] { background: var(--paper); border-color: var(--ink); }
+.stage-btn.cleared .nm::after { content: " 済"; color: var(--ok); font-size: 0.7rem; }
+.stage-btn:focus-visible, .ctl:focus-visible, .tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.goalbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }
+.goal { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-weight: 700; }
+.chip { position: relative; display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 5px; font-family: var(--font-display); font-size: 1rem; }
+.chip.now::after {
+  content: "✓"; position: absolute; right: -7px; top: -7px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--ok); color: var(--paper); font: 700 10px/16px var(--font-body); text-align: center;
+}
+.chip.clear { font-family: var(--font-body); font-size: 0.85rem; font-weight: 700; }
+.goal small.left { font-weight: 400; color: var(--muted); }
+.meta { color: var(--muted); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.meta b { color: var(--ink); font-weight: 700; }
+.note { margin: 0; font-size: 0.88rem; color: var(--muted); }
+.note b { color: var(--ink); }
+.note .c { color: var(--warn); font-weight: 700; }
+.note .h { color: var(--diff); font-weight: 700; }
+.boardbox { position: relative; perspective: 1400px; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.sheet-ghost { position: absolute; border: 1px dashed var(--paper-edge); border-radius: 2px; }
+.paper { position: absolute; background: var(--paper); box-shadow: 0 1px 0 var(--paper-edge), 0 6px 18px var(--shade); border-radius: 2px; }
+.cell { position: absolute; box-sizing: border-box; border-right: 1px solid var(--paper-back); border-bottom: 1px solid var(--paper-back); }
+.tile {
+  position: absolute; inset: 12%; border-radius: 5px; display: grid; place-items: center;
+  font-family: var(--font-display); color: #fff; box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.18);
+}
+.tile .k { position: absolute; top: 1px; left: 3px; font-family: var(--font-body); font-weight: 700; font-size: 0.55em; opacity: 0.85; line-height: 1; }
+.c1 { background: var(--aka); }
+.c2 { background: var(--ao); }
+.c3 { background: var(--ki); color: var(--ki-ink); }
+.cell.goal-now .tile { outline: 2px solid var(--ok); outline-offset: 1px; }
+.cell.goal-hit .tile { outline: 3px solid var(--ok); outline-offset: 2px; }
+.cell.landed .tile { animation: land 360ms ease-out; }
+.cell.cancelled::before {
+  content: ""; position: absolute; inset: 2px; border-radius: 6px; border: 3px solid var(--warn); animation: cancel 700ms ease-out forwards; pointer-events: none;
+}
+@keyframes land { from { transform: scale(1.25); } to { transform: scale(1); } }
+@keyframes cancel { 0% { opacity: 1; transform: scale(0.8); } 100% { opacity: 0; transform: scale(1.15); } }
+.cell.diff { box-shadow: inset 0 0 0 3px var(--diff); }
+.cell.diff::after {
+  content: "≠"; position: absolute; right: 1px; bottom: 0; font: 700 12px/1 var(--font-body); color: var(--diff);
+  background: var(--paper); border-radius: 3px; padding: 0 2px;
+}
+.tab {
+  position: absolute; width: 26px; height: 26px; padding: 0; border-radius: 50%; border: 1px solid var(--line);
+  background: var(--paper); color: var(--muted); font: 700 11px/1 var(--font-body); cursor: pointer; font-variant-numeric: tabular-nums;
+}
+.tab:hover, .tab.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.tab:disabled { opacity: 0.35; cursor: default; background: var(--paper); color: var(--muted); }
+.pv-layer { position: absolute; inset: 0; pointer-events: none; }
+.pv-zone { position: absolute; background: repeating-linear-gradient(135deg, var(--shade) 0 6px, transparent 6px 12px); }
+.pv-line { position: absolute; }
+.pv-line.v { border-left: 2px dashed var(--ink); width: 0; }
+.pv-line.h { border-top: 2px dashed var(--ink); height: 0; }
+.pv-badge {
+  position: absolute; min-width: 22px; height: 18px; padding: 0 3px; border-radius: 9px; display: grid; place-items: center;
+  font: 700 11px/1 var(--font-body); background: var(--ink); color: var(--paper); box-shadow: 0 0 0 2px var(--paper); white-space: nowrap;
+}
+.pv-badge.minus { background: var(--warn); }
+.pv-badge.gone { background: var(--paper); color: var(--warn); border: 1px solid var(--warn); }
+.pv-badge.hit { background: var(--ok); }
+.flap { position: absolute; transform-style: preserve-3d; z-index: 5; }
+.flap .face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; background: var(--paper); }
+.flap .face.back { background: var(--paper-back); transform: rotateY(180deg); box-shadow: inset 0 0 0 1px var(--paper-edge); }
+.flap.x .face.back { transform: rotateX(180deg); }
+.twin { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-start; padding: 10px 12px; border: 1px dashed var(--diff); border-radius: 8px; }
+.twin-text { flex: 1 1 14em; min-width: 0; display: flex; flex-direction: column; gap: 6px; font-size: 0.85rem; }
+.twin-text h2 { margin: 0; font-size: 0.9rem; }
+.twin-text p { margin: 0; color: var(--muted); }
+.twin-state b { color: var(--ink); }
+.minibox { position: relative; flex: 0 0 auto; }
+.minibox .cell { border-color: transparent; }
+.minibox .tile { inset: 8%; border-radius: 3px; box-shadow: none; }
+.minibox .tile .k { display: none; }
+.minibox .cell.diff::after { font-size: 9px; }
+.status { min-height: 1.6em; margin: 0; font-weight: 700; }
+.status.win { color: var(--ok); }
+.status.lose { color: var(--warn); }
+.log { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.log:empty { display: none; }
+.log li { font-size: 0.8rem; padding: 2px 8px; border-radius: 12px; border: 1px solid var(--paper-edge); background: var(--paper); font-variant-numeric: tabular-nums; }
+.ctls { display: flex; flex-wrap: wrap; gap: 8px; }
+.ctl { font: inherit; font-weight: 700; padding: 7px 14px; border-radius: 6px; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); cursor: pointer; }
+.ctl.sub { border-color: var(--diff); color: var(--diff); }
+.ctl:disabled { opacity: 0.4; cursor: default; }
+.heat { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--paper-edge); border-radius: 8px; }
+.heat .shade { position: absolute; inset: 1px; border-radius: 3px; background: var(--ink); }
+.heat .minibox .tile { inset: 22%; }
+.after { margin: 0; padding: 12px 14px; border-left: 3px solid var(--ok); background: var(--paper); border-radius: 0 6px 6px 0; font-size: 0.9rem; }
+.rules { font-size: 0.88rem; color: var(--muted); display: flex; flex-direction: column; gap: 6px; }
+.rules h2 { font-size: 0.95rem; color: var(--ink); margin: 0; letter-spacing: 0.04em; }
+.rules ul { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
+@media (max-width: 460px) {
+  .prow { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .plabel small { display: inline; margin-left: 6px; }
+}
+@media (prefers-reduced-motion: reduce) { .cell.landed .tile, .cell.cancelled::before { animation: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>折り紙盤</h1>
+    <p class="lede">紙を折ると、重なったマスが合わさる。上限の回数までに、目標のマスを作れ。</p>
+  </header>
+
+  <div class="picker" id="picker" role="group" aria-label="盤面"></div>
+
+  <div class="goalbar">
+    <div class="goal" id="goal"></div>
+    <div class="meta" id="meta"></div>
+  </div>
+  <p class="note" id="note" hidden></p>
+
+  <div class="boardbox" id="board" aria-label="盤"></div>
+
+  <section class="twin" id="twin" hidden>
+    <div class="minibox" id="mini" aria-label="元の盤"></div>
+    <div class="twin-text">
+      <h2 id="twin-title"></h2>
+      <p>折るたびに、こちらの盤も同じ手で折れる。<span style="color:var(--diff);font-weight:700">≠</span> の付いたマスが、2枚で値の違うマス。</p>
+      <p class="twin-state" id="twin-state"></p>
+      <div><button class="ctl sub" id="twin-replay" type="button">元の盤の答えをなぞる</button></div>
+    </div>
+  </section>
+
+  <p class="status" id="status" aria-live="polite"></p>
+  <ol class="log" id="log" aria-label="折った順"></ol>
+
+  <div class="ctls">
+    <button class="ctl" id="undo" type="button">1回戻す</button>
+    <button class="ctl" id="reset" type="button">最初から</button>
+    <button class="ctl" id="answer" type="button">答えを見せる</button>
+  </div>
+  <p class="after" id="after" hidden></p>
+  <section class="heat" id="heat" hidden>
+    <div class="minibox" id="heatmap" aria-label="1マスの重み"></div>
+    <div class="twin-text">
+      <h2>1マスの重み</h2>
+      <p>最初の盤のうち、色の濃いマスほど、そこを別の値に変えるだけでこの盤の解がすべて通らなくなりやすい（そのマスの変え方のうち、全滅する割合）。</p>
+      <p class="twin-state" id="heat-state"></p>
+    </div>
+  </section>
+
+  <section class="rules">
+    <h2>遊び方</h2>
+    <ul>
+      <li>紙の上と左にある丸いつまみが折り線。押すと、短い側が鏡写しに裏返って長い側に重なる。同じ長さなら左が右へ、上が下へ。</li>
+      <li>重なったマスは、同じ色なら数を足す。違う色なら打ち消し合い、大きいほうが差だけ残る（同じ数なら両方消える）。打ち消しは2色・3色の面だけで起きる。</li>
+      <li>練習（1色・2色）は目標が1つ。本編（3色）は目標が2つで、2つが同時に盤にそろったらクリア。</li>
+      <li>3色では重ねる順で結果が変わる。赤3に青1が重なると赤2、そこへ黄2が来ると両方消える。先に青1と黄2が重なると黄1、そこへ赤3が来ると赤2が残る。1色・2色では順を入れ替えても同じになる。</li>
+      <li><span style="color:var(--accent);font-weight:700">順</span> の付いた面は、どの解も、となり合う縦と横の折りを入れ替えると通らない。<span style="color:var(--warn);font-weight:700">打消</span> の付いた面は、打ち消しを使わないと目標に届かない。<span style="color:var(--diff);font-weight:700">ひび</span> の面は、別の面（元の盤）と1マスだけ違う盤で、元の盤の答えはそのままでは通らない。</li>
+      <li>「消」の札は、その色のマスを盤から1枚残らず消す目標（打ち消しでしか消えない）。</li>
+      <li>マウスはつまみに乗せると、折ったあとの数が先に見える。スマホは1回目のタップで予告、同じつまみの2回目で折る。</li>
+      <li>つまみの数字は、紙の左端（上端）から何マス目の線か。折った順の「縦2」は左から2マス目の縦線のこと。</li>
+    </ul>
+  </section>
+</div>
+
+<script src="core.js"></script>
+<script src="stages.js"></script>
+<script>
+(function () {
+  var COLOR = { 1: '赤', 2: '青', 3: '黄' };
+  var GROUP = { 1: ['練習', '1色・2色'], 2: ['本編', '3色 前半'], 3: ['本編', '3色 後半'] };
+  var S = { stage: 0, cur: null, hist: [], log: [], preview: null, busy: false, won: false, shown: false, demo: false, cleared: {} };
+  var lastPointer = 'mouse';
+  var boardEl = document.getElementById('board');
+  var cs = 40, MX = 34, MY = 34;
+
+  try { var saved = JSON.parse(localStorage.getItem('fold3-cleared') || '{}'); if (saved && typeof saved === 'object') S.cleared = saved; } catch (e) {}
+
+  function colorOf(code) { return Math.floor(code / 100); }
+  function valOf(code) { return code % 100; }
+  function codeName(code) { return COLOR[colorOf(code)] + valOf(code); }
+  // 目標の文。消し切り（負の値）は先に書き、いま盤に残っている枚数を添える
+  function goalText(targets) {
+    var clears = [], makes = [];
+    for (var i = 0; i < targets.length; i++) {
+      if (targets[i] < 0) clears.push(-targets[i]); else makes.push(codeName(targets[i]));
+    }
+    if (!clears.length) return makes.length > 1 ? makes.join(' と ') + ' を同時にそろえる' : makes[0] + ' を作る';
+    var verb = makes.length ? '消して' : '消す', out = [];
+    for (i = 0; i < clears.length; i++) {
+      var c = clears[i], n = 0;
+      for (var j = 0; j < S.cur.cells.length; j++) if (S.cur.cells[j] && colorOf(S.cur.cells[j]) === c) n++;
+      out.push('盤の' + COLOR[c] + 'をすべて' + verb + '<small class="left">（残り ' + n + ' 枚）</small>');
+    }
+    return out.join('、') + (makes.length ? '、' + makes.join(' と ') + ' を作る' : '');
+  }
+  function tileHtml(code, fs) {
+    if (!code) return '';
+    return '<div class="tile c' + colorOf(code) + '" style="font-size:' + fs + 'px"><span class="k">' + COLOR[colorOf(code)] + '</span>' + valOf(code) + '</div>';
+  }
+  function moveLabel(m) { return (m[0] === 'V' ? '縦' : '横') + m[1]; }
+  function stage() { return STAGES[S.stage]; }
+  function stageName(s) { return GROUP[s.group][0] + ' ' + s.label; }
+  function indexOfId(id) { for (var i = 0; i < STAGES.length; i++) if (STAGES[i].id === id) return i; return -1; }
+  function twinStage() { var st = stage(); return st.twinOf ? STAGES[indexOfId(st.twinOf)] : null; }
+  function startBoard(st) { return { w: st.w, h: st.h, cells: st.cells.slice(), ox: 0, oy: 0 }; }
+  function sameMove(a, b) { return a && b && a[0] === b[0] && a[1] === b[1]; }
+  function canFold() { return !S.busy && !S.won && S.log.length < stage().limit && (S.cur.w > 1 || S.cur.h > 1); }
+  function isTarget(code) { var t = stage().targets; for (var i = 0; i < t.length; i++) if (t[i] === code) return true; return false; }
+
+  // ひびの面: 元の盤を同じ手順で折ったもの
+  function twinBoard() {
+    var tw = twinStage();
+    if (!tw) return null;
+    var b = startBoard(tw);
+    for (var i = 0; i < S.log.length; i++) b = FoldCore.fold(b, S.log[i]);
+    return b;
+  }
+  function diffSet(tb) {
+    var d = {};
+    if (!tb) return d;
+    for (var i = 0; i < S.cur.cells.length; i++) if (S.cur.cells[i] !== tb.cells[i]) d[i] = true;
+    return d;
+  }
+
+  function layout() {
+    var st = stage();
+    // 盤の箱そのものの幅（外枠の余白を含まない）から1マスの大きさを決める
+    var avail = Math.min(boardEl.clientWidth, 600) - MX - 4;
+    cs = Math.max(30, Math.min(64, Math.floor(avail / st.w)));
+    boardEl.style.height = (MY + st.h * cs + 8) + 'px';
+  }
+
+  // 折る側の範囲（いまの紙の中の番地）
+  function flipRegion(b, m, flip) {
+    var k = m[1];
+    if (flip === 'L') return { x0: 0, x1: k, y0: 0, y1: b.h };
+    if (flip === 'R') return { x0: k, x1: b.w, y0: 0, y1: b.h };
+    if (flip === 'T') return { x0: 0, x1: b.w, y0: 0, y1: k };
+    return { x0: 0, x1: b.w, y0: k, y1: b.h };
+  }
+
+  // 折ったあとの各マスについて、裏返って重なってくる元のマスの値（なければ 0）と、もとからあった値
+  function overlaps(b, m, r) {
+    var out = [];
+    var X = b.ox + m[1], Y = b.oy + m[1];
+    for (var y = 0; y < r.h; y++) {
+      for (var x = 0; x < r.w; x++) {
+        var fx = r.ox + x, fy = r.oy + y;
+        var mx = m[0] === 'V' ? 2 * X - 1 - fx : fx, my = m[0] === 'H' ? 2 * Y - 1 - fy : fy;
+        var ix = mx - b.ox, iy = my - b.oy, inc = 0;
+        if (ix >= 0 && iy >= 0 && ix < b.w && iy < b.h) inc = b.cells[iy * b.w + ix];
+        var sx = fx - b.ox, sy = fy - b.oy;
+        var stay = b.cells[sy * b.w + sx];
+        out.push({ i: y * r.w + x, fx: fx, fy: fy, inc: inc, stay: stay, after: r.cells[y * r.w + x] });
+      }
+    }
+    return out;
+  }
+
+  function renderBoard(hide) {
+    var st = stage(), b = S.cur, fs = Math.round(cs * 0.42), html = [];
+    var diff = diffSet(twinBoard());
+    html.push('<div class="sheet-ghost" style="left:' + MX + 'px;top:' + MY + 'px;width:' + (st.w * cs) + 'px;height:' + (st.h * cs) + 'px"></div>');
+    var px = MX + b.ox * cs, py = MY + b.oy * cs;
+    // 折っている最中は、裏返る側を紙から外して別の板（flap）で動かす
+    var pw = b.w, ph = b.h, sx = 0, sy = 0;
+    if (hide) {
+      if (hide.x0 === 0 && hide.x1 < b.w) { sx = hide.x1; pw = b.w - hide.x1; }
+      else if (hide.x0 > 0) { pw = hide.x0; }
+      else if (hide.y0 === 0 && hide.y1 < b.h) { sy = hide.y1; ph = b.h - hide.y1; }
+      else if (hide.y0 > 0) { ph = hide.y0; }
+    }
+    html.push('<div class="paper" style="left:' + (px + sx * cs) + 'px;top:' + (py + sy * cs) + 'px;width:' + (pw * cs) + 'px;height:' + (ph * cs) + 'px"></div>');
+    for (var y = 0; y < b.h; y++) {
+      for (var x = 0; x < b.w; x++) {
+        if (hide && x >= hide.x0 && x < hide.x1 && y >= hide.y0 && y < hide.y1) continue;
+        var i = y * b.w + x, cls = 'cell';
+        if (b.cells[i] && isTarget(b.cells[i])) cls += S.won ? ' goal-hit' : ' goal-now';
+        if (S.landed && S.landed[i]) cls += ' landed';
+        if (S.cancelled && S.cancelled[i]) cls += ' cancelled';
+        if (diff[i]) cls += ' diff';
+        html.push('<div class="' + cls + '" style="left:' + (px + x * cs) + 'px;top:' + (py + y * cs) + 'px;width:' + cs + 'px;height:' + cs + 'px">' + tileHtml(b.cells[i], fs) + '</div>');
+      }
+    }
+    var dis = canFold() ? '' : ' disabled';
+    for (var k = 1; k < b.w; k++) {
+      html.push('<button type="button" class="tab" data-t="V" data-k="' + k + '" aria-label="縦の折り線 ' + k + '" style="left:' + (px + k * cs - 13) + 'px;top:' + (py - 32) + 'px"' + dis + '>' + k + '</button>');
+    }
+    for (k = 1; k < b.h; k++) {
+      html.push('<button type="button" class="tab" data-t="H" data-k="' + k + '" aria-label="横の折り線 ' + k + '" style="left:' + (px - 32) + 'px;top:' + (py + k * cs - 13) + 'px"' + dis + '>' + k + '</button>');
+    }
+    html.push('<div class="pv-layer" id="pv"></div>');
+    boardEl.innerHTML = html.join('');
+  }
+
+  // 1手先の予告: 裏返る側に斜線、折り線を点線、重なって変わるマスに折ったあとの値
+  function renderPreview() {
+    var pv = document.getElementById('pv');
+    var tabs = boardEl.querySelectorAll('.tab');
+    for (var t = 0; t < tabs.length; t++) {
+      tabs[t].classList.toggle('on', !!S.preview && tabs[t].getAttribute('data-t') === S.preview[0] && +tabs[t].getAttribute('data-k') === S.preview[1]);
+    }
+    if (!pv) return;
+    if (!S.preview || !canFold()) { pv.innerHTML = ''; return; }
+    var b = S.cur, m = S.preview, r = FoldCore.fold(b, m), html = [];
+    var reg = flipRegion(b, m, r.flip), px = MX + b.ox * cs, py = MY + b.oy * cs;
+    html.push('<div class="pv-zone" style="left:' + (px + reg.x0 * cs) + 'px;top:' + (py + reg.y0 * cs) + 'px;width:' + ((reg.x1 - reg.x0) * cs) + 'px;height:' + ((reg.y1 - reg.y0) * cs) + 'px"></div>');
+    if (m[0] === 'V') html.push('<div class="pv-line v" style="left:' + (px + m[1] * cs - 1) + 'px;top:' + (py - 6) + 'px;height:' + (b.h * cs + 12) + 'px"></div>');
+    else html.push('<div class="pv-line h" style="top:' + (py + m[1] * cs - 1) + 'px;left:' + (px - 6) + 'px;width:' + (b.w * cs + 12) + 'px"></div>');
+    var ovs = overlaps(b, m, r);
+    for (var j = 0; j < ovs.length; j++) {
+      var o = ovs[j];
+      if (!o.inc) continue;
+      var cancel = o.stay && colorOf(o.stay) !== colorOf(o.inc);
+      var cls = 'pv-badge' + (o.after === 0 ? ' gone' : (cancel ? ' minus' : '')) + (o.after && isTarget(o.after) ? ' hit' : '');
+      var label = o.after === 0 ? '消' : codeName(o.after);
+      html.push('<div class="' + cls + '" style="left:' + (MX + o.fx * cs + cs - 24) + 'px;top:' + (MY + o.fy * cs - 6) + 'px">' + label + '</div>');
+    }
+    pv.innerHTML = html.join('');
+  }
+
+  function renderTwin() {
+    var tw = twinStage(), box = document.getElementById('twin');
+    if (!tw) { box.hidden = true; return; }
+    box.hidden = false;
+    var tb = twinBoard(), diff = diffSet(tb), mcs = 20, html = [];
+    var mini = document.getElementById('mini');
+    mini.style.width = (tw.w * mcs) + 'px';
+    mini.style.height = (tw.h * mcs) + 'px';
+    html.push('<div class="sheet-ghost" style="left:0;top:0;width:' + (tw.w * mcs) + 'px;height:' + (tw.h * mcs) + 'px"></div>');
+    html.push('<div class="paper" style="left:' + (tb.ox * mcs) + 'px;top:' + (tb.oy * mcs) + 'px;width:' + (tb.w * mcs) + 'px;height:' + (tb.h * mcs) + 'px;box-shadow:none"></div>');
+    for (var y = 0; y < tb.h; y++) {
+      for (var x = 0; x < tb.w; x++) {
+        var i = y * tb.w + x;
+        html.push('<div class="cell' + (diff[i] ? ' diff' : '') + '" style="left:' + ((tb.ox + x) * mcs) + 'px;top:' + ((tb.oy + y) * mcs) + 'px;width:' + mcs + 'px;height:' + mcs + 'px">' + tileHtml(tb.cells[i], 10) + '</div>');
+      }
+    }
+    mini.innerHTML = html.join('');
+    document.getElementById('twin-title').textContent = '元の盤「' + stageName(tw) + '」';
+    var tw_won = FoldCore.winAll(tb, tw.targets);
+    var nd = 0; for (var k in diff) if (diff.hasOwnProperty(k)) nd++;
+    document.getElementById('twin-state').innerHTML = '元の盤では目標が <b>' + (tw_won ? 'そろっている' : 'まだそろっていない') + '</b>。値の違うマスは今 <b>' + nd + '</b> 個。';
+    document.getElementById('twin-replay').disabled = S.busy;
+  }
+
+  // クリア後の「1マスの重み」の地図（heat.py が書いた heat を最初の盤に重ねる）
+  function renderHeat() {
+    var st = stage(), box = document.getElementById('heat');
+    if (!S.won || !st.heat) { box.hidden = true; return; }
+    box.hidden = false;
+    var mcs = 24, html = [], hot = 0, top = 0;
+    var mini = document.getElementById('heatmap');
+    mini.style.width = (st.w * mcs) + 'px';
+    mini.style.height = (st.h * mcs) + 'px';
+    html.push('<div class="paper" style="left:0;top:0;width:' + (st.w * mcs) + 'px;height:' + (st.h * mcs) + 'px;box-shadow:none"></div>');
+    for (var y = 0; y < st.h; y++) {
+      for (var x = 0; x < st.w; x++) {
+        var i = y * st.w + x, v = st.heat[i];
+        if (v > 0) hot++;
+        if (v > top) top = v;
+        html.push('<div class="cell' + (st.twinOf && i === st.crack ? ' diff' : '') + '" style="left:' + (x * mcs) + 'px;top:' + (y * mcs) + 'px;width:' + mcs + 'px;height:' + mcs + 'px">' +
+          (v > 0 ? '<div class="shade" style="opacity:' + (0.12 + 0.5 * v / 100).toFixed(2) + '"></div>' : '') + tileHtml(st.cells[i], 10) + '</div>');
+      }
+    }
+    mini.innerHTML = html.join('');
+    var txt = '重みのあるマスは <b>' + hot + '</b> / ' + st.heat.length + '、いちばん重いマスで <b>' + top + '%</b>。';
+    if (st.twinOf) txt += ' ≠ は元の盤と違う1マス。';
+    document.getElementById('heat-state').innerHTML = txt;
+  }
+
+  function renderPanel() {
+    var st = stage(), html = [];
+    for (var g = 1; g <= 3; g++) {
+      var btns = [];
+      for (var i = 0; i < STAGES.length; i++) {
+        var s = STAGES[i];
+        if (s.group !== g) continue;
+        var tags = (g === 1 ? s.colors.length + '色・' : '') + s.w + '×' + s.h + (s.tag ? ' ' + s.tag : '');
+        if (s.orderReq) tags += ' <span class="tag-o">順</span>';
+        if (s.cancelReq) tags += ' <span class="tag-c">打消</span>';
+        if (s.twinOf) tags += ' <span class="tag-h">ひび</span>';
+        btns.push('<button type="button" class="stage-btn' + (S.cleared[s.id] ? ' cleared' : '') + '" data-i="' + i + '" aria-pressed="' + (i === S.stage) + '"><span class="nm">' + s.label + '</span><span class="sz">' + tags + '</span></button>');
+      }
+      if (!btns.length) continue;
+      html.push('<div class="prow"><div class="plabel">' + GROUP[g][0] + '<small>' + GROUP[g][1] + '</small></div><div class="pbtns">' + btns.join('') + '</div></div>');
+    }
+    document.getElementById('picker').innerHTML = html.join('');
+
+    var gh = ['目標'];
+    for (var t = 0; t < st.targets.length; t++) {
+      var code = st.targets[t], now = FoldCore.has(S.cur, code);
+      // 負の目標は「その色を消し切る」
+      if (code < 0) gh.push('<span class="chip clear c' + (-code) + (now ? ' now' : '') + '" title="' + COLOR[-code] + 'を消し切る">消</span>');
+      else gh.push('<span class="chip c' + colorOf(code) + (now ? ' now' : '') + '" title="' + codeName(code) + '">' + valOf(code) + '</span>');
+    }
+    gh.push('<span>' + goalText(st.targets) + '</span>');
+    document.getElementById('goal').innerHTML = gh.join('');
+    var left = st.limit - S.log.length;
+    document.getElementById('meta').innerHTML = '折れるのは あと <b>' + left + '</b> 回（上限 ' + st.limit + '）・でたらめに折って届く確率 <b>' + pct(st.prand) + '</b>';
+
+    var note = document.getElementById('note'), nt = [];
+    var tw = twinStage();
+    if (st.teach) nt.push('<span class="t">ここで覚えること:</span> ' + st.teach);
+    if (tw) nt.push('<span class="h">ねらい:</span> 元の盤「' + stageName(tw) + '」と1マスだけ違う盤。目標も上限も同じなのに、元の盤の答えはここでは通らない。下の元の盤と見比べながら、この盤の答えを探す。');
+    if (st.orderReq) nt.push('<span class="o">順:</span> どの解も、となり合う縦と横の折りを入れ替えると通らない。');
+    if (st.cancelReq) nt.push('<span class="c">打消:</span> 打ち消しを使わないと目標に届かない。');
+    note.innerHTML = nt.join('<br>');
+    note.hidden = nt.length === 0;
+
+    var lg = [];
+    for (var j = 0; j < S.log.length; j++) lg.push('<li>' + (j + 1) + '. ' + moveLabel(S.log[j]) + '</li>');
+    document.getElementById('log').innerHTML = lg.join('');
+    document.getElementById('undo').disabled = S.busy || S.log.length === 0;
+    document.getElementById('reset').disabled = S.busy || S.log.length === 0;
+    document.getElementById('answer').disabled = S.busy;
+
+    var status = document.getElementById('status');
+    var stuck = S.log.length >= st.limit || (S.cur.w === 1 && S.cur.h === 1);
+    if (S.won) { status.className = 'status win'; status.textContent = S.log.length + ' 回で目標がそろった。'; }
+    else if (stuck && S.demo) { status.className = 'status lose'; status.textContent = '元の盤ではそろったのに、この盤ではそろわない。違いは ≠ のマスだけ。'; }
+    else if (stuck) { status.className = 'status lose'; status.textContent = 'もう折れない。1回戻すか、最初からやり直す。'; }
+    else { status.className = 'status'; status.textContent = ''; }
+
+    var after = document.getElementById('after');
+    if (S.won) {
+      var txt = '上限 ' + st.limit + ' 回までに届く折り方は ' + st.nsol + ' 通り';
+      if (st.colors.length > 1) txt += st.nclean > 0 ? '（うち打ち消しを使わずに届くのは ' + st.nclean + ' 通り）' : '（どれも打ち消しを使う）';
+      txt += '。最少は ' + st.min + ' 回。';
+      if (st.swapTot) txt += '解の中のとなり合う縦と横の折りを入れ替えると、' + st.swapTot + ' 通りのうち ' + st.swapFail + ' 通りが通らない' + (st.swapFail ? '（3色の重ねる順が効いている）' : '') + '。';
+      txt += 'この盤の1マスだけを変えた盤では、' + Math.round(st.wipe * 100) + '% で、ここの解がすべて通らなくなる。';
+      if (S.shown) txt += '（今回は答えを見た）';
+      if (tw) txt += ' 元の盤の答えは ' + tw.answer.map(moveLabel).join('→') + '、ここの答えは ' + st.answer.map(moveLabel).join('→') + '。';
+      after.textContent = txt;
+      after.hidden = false;
+    } else {
+      after.hidden = true;
+    }
+  }
+
+  function pct(p) {
+    if (p >= 0.1) return Math.round(p * 100) + '%';
+    if (p >= 0.01) return (p * 100).toFixed(1) + '%';
+    if (p >= 0.001) return (p * 100).toFixed(2) + '%';
+    return (p * 100).toFixed(3) + '%';
+  }
+
+  function render(hide) { layout(); renderBoard(hide); renderPreview(); renderTwin(); renderPanel(); renderHeat(); }
+
+  function setPreview(m) {
+    if (sameMove(S.preview, m) || (!m && !S.preview)) return;
+    S.preview = m;
+    renderPreview();
+  }
+
+  function commit(r, m) {
+    // 裏返ってきたマスに着地の印、違う色の重なりに打ち消しの印
+    var b = S.cur, landed = {}, cancelled = {};
+    var ovs = overlaps(b, m, r);
+    for (var j = 0; j < ovs.length; j++) {
+      var o = ovs[j];
+      if (!o.inc) continue;
+      if (o.after) landed[o.i] = true;
+      if (o.stay && colorOf(o.stay) !== colorOf(o.inc)) cancelled[o.i] = true;
+    }
+    S.hist.push(S.cur);
+    S.log.push(m);
+    S.cur = { w: r.w, h: r.h, cells: r.cells, ox: r.ox, oy: r.oy };
+    S.preview = null;
+    S.landed = landed;
+    S.cancelled = cancelled;
+    if (FoldCore.winAll(S.cur, stage().targets)) {
+      S.won = true;
+      if (!S.shown && !S.demo) { S.cleared[stage().id] = true; try { localStorage.setItem('fold3-cleared', JSON.stringify(S.cleared)); } catch (e) {} }
+    }
+    S.busy = false;
+    render();
+    S.landed = null;
+    S.cancelled = null;
+  }
+
+  function doFold(m, done) {
+    if (!canFold()) return;
+    var b = S.cur, r = FoldCore.fold(b, m);
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce || !boardEl.animate) { commit(r, m); if (done) done(); return; }
+    S.busy = true;
+    S.preview = null;
+    var reg = flipRegion(b, m, r.flip);
+    renderBoard(reg);
+    renderTwin();
+    renderPanel();
+    var px = MX + b.ox * cs, py = MY + b.oy * cs, fs = Math.round(cs * 0.42);
+    var fw = (reg.x1 - reg.x0) * cs, fh = (reg.y1 - reg.y0) * cs;
+    var flap = document.createElement('div');
+    flap.className = 'flap' + (m[0] === 'H' ? ' x' : '');
+    flap.style.cssText = 'left:' + (px + reg.x0 * cs) + 'px;top:' + (py + reg.y0 * cs) + 'px;width:' + fw + 'px;height:' + fh + 'px';
+    var inner = [];
+    for (var y = reg.y0; y < reg.y1; y++) {
+      for (var x = reg.x0; x < reg.x1; x++) {
+        inner.push('<div class="cell" style="left:' + ((x - reg.x0) * cs) + 'px;top:' + ((y - reg.y0) * cs) + 'px;width:' + cs + 'px;height:' + cs + 'px">' + tileHtml(b.cells[y * b.w + x], fs) + '</div>');
+      }
+    }
+    flap.innerHTML = '<div class="face">' + inner.join('') + '</div><div class="face back"></div>';
+    boardEl.appendChild(flap);
+    var origin = { L: '100% 50%', R: '0% 50%', T: '50% 100%', B: '50% 0%' }[r.flip];
+    var to = { L: 'rotateY(180deg)', R: 'rotateY(-180deg)', T: 'rotateX(-180deg)', B: 'rotateX(180deg)' }[r.flip];
+    flap.style.transformOrigin = origin;
+    var anim = flap.animate([{ transform: 'rotateY(0deg) rotateX(0deg)' }, { transform: to }], { duration: 420, easing: 'cubic-bezier(.45,.05,.35,1)', fill: 'forwards' });
+    anim.onfinish = function () { commit(r, m); if (done) done(); };
+  }
+
+  function loadStage(i) {
+    S.stage = i; S.cur = startBoard(STAGES[i]); S.hist = []; S.log = []; S.preview = null;
+    S.won = false; S.shown = false; S.demo = false; S.busy = false;
+    render();
+  }
+
+  // 手順を1手ずつ予告してから折る（答えを見せる・元の盤の答えをなぞる）
+  function replay(seq, flag) {
+    if (S.busy) return;
+    var i = 0;
+    loadStage(S.stage);
+    S[flag] = true;
+    function next() {
+      if (i >= seq.length || !canFold()) { render(); return; }
+      var m = seq[i++];
+      S.preview = m; renderPreview();
+      setTimeout(function () { doFold(m, function () { setTimeout(next, 250); }); }, 550);
+    }
+    next();
+  }
+
+  function moveFromTab(el) { return [el.getAttribute('data-t'), +el.getAttribute('data-k')]; }
+
+  boardEl.addEventListener('pointerdown', function (e) { lastPointer = e.pointerType || 'mouse'; });
+  boardEl.addEventListener('keydown', function () { lastPointer = 'keyboard'; });
+  boardEl.addEventListener('pointerover', function (e) {
+    var t = e.target.closest && e.target.closest('.tab');
+    if (!t || e.pointerType !== 'mouse' || t.disabled) return;
+    setPreview(moveFromTab(t));
+  });
+  boardEl.addEventListener('pointerout', function (e) {
+    var t = e.target.closest && e.target.closest('.tab');
+    if (!t || e.pointerType !== 'mouse') return;
+    if (e.relatedTarget && t.contains(e.relatedTarget)) return;
+    setPreview(null);
+  });
+  boardEl.addEventListener('focusin', function (e) {
+    var t = e.target.closest && e.target.closest('.tab');
+    if (t && lastPointer === 'keyboard') setPreview(moveFromTab(t));
+  });
+  boardEl.addEventListener('click', function (e) {
+    var t = e.target.closest && e.target.closest('.tab');
+    if (!t || t.disabled) return;
+    var m = moveFromTab(t);
+    S.demo = false;
+    if (lastPointer === 'mouse' || sameMove(S.preview, m)) doFold(m);
+    else setPreview(m);
+  });
+
+  document.getElementById('picker').addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('.stage-btn');
+    if (!b || S.busy) return;
+    loadStage(+b.getAttribute('data-i'));
+  });
+  document.getElementById('undo').addEventListener('click', function () {
+    if (S.busy || !S.hist.length) return;
+    S.cur = S.hist.pop(); S.log.pop(); S.won = false; S.preview = null;
+    render();
+  });
+  document.getElementById('reset').addEventListener('click', function () { if (!S.busy) { var sh = S.shown; loadStage(S.stage); S.shown = sh; render(); } });
+  document.getElementById('answer').addEventListener('click', function () { replay(stage().answer, 'shown'); });
+  document.getElementById('twin-replay').addEventListener('click', function () { var tw = twinStage(); if (tw) replay(tw.answer, 'demo'); });
+  window.addEventListener('resize', function () { if (!S.busy) render(); });
+
+  // ページの更新をまたいで、遊んでいる盤と折った順を持ち越す
+  function start(data) {
+    var i = 0;
+    if (data && typeof data.id === 'string' && indexOfId(data.id) >= 0) i = indexOfId(data.id);
+    var h = (location.hash || '').replace('#', '');
+    if (h && indexOfId(h.replace('s', '').replace('_', '-')) >= 0) i = indexOfId(h.replace('s', '').replace('_', '-'));
+    loadStage(i);
+    if (data && data.log) {
+      for (var j = 0; j < data.log.length && canFold(); j++) commit(FoldCore.fold(S.cur, data.log[j]), data.log[j]);
+    }
+  }
+  if (window.claude && window.claude.hot && window.claude.hot.snapshot) {
+    window.claude.hot.snapshot(function () { return { id: stage().id, log: S.log }; });
+  }
+  if (window.claude && window.claude.hot && window.claude.hot.ready) window.claude.hot.ready(start);
+  else start((window.claude && window.claude.hot && window.claude.hot.data) || {});
+})();
+</script>

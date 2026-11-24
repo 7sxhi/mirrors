@@ -1,0 +1,42 @@
+<!doctype html><meta charset="utf-8"><title>check2</title>
+<pre id="out">not run</pre>
+<script src="../core.js"></script>
+<script src="../stages.js"></script>
+<script>
+// stages.js の各面について、JS の規則で次を確かめる（Edge のヘッドレスで --dump-dom して読む）
+// 1. 答えをなぞると、最後の手で初めて目標がそろう
+// 2. 上限までに届く手順の数が Python の数（nsol）と同じ
+// 3. ひびの面: 元の盤の答えはこの盤で届かず、この盤の答えは元の盤で届かない
+function start(st) { return { w: st.w, h: st.h, cells: st.cells.slice(), ox: 0, oy: 0 }; }
+function reaches(st, seq) {
+  var b = start(st);
+  for (var i = 0; i < seq.length; i++) {
+    if (seq[i][0] === 'V' && seq[i][1] >= b.w) return false;
+    if (seq[i][0] === 'H' && seq[i][1] >= b.h) return false;
+    b = FoldCore.fold(b, seq[i]);
+    if (FoldCore.winAll(b, st.targets)) return true;
+  }
+  return false;
+}
+var lines = [], bad = 0;
+for (var i = 0; i < STAGES.length; i++) {
+  var st = STAGES[i], b = start(st), early = false;
+  for (var j = 0; j < st.answer.length; j++) {
+    if (FoldCore.winAll(b, st.targets)) early = true;
+    b = FoldCore.fold(b, st.answer[j]);
+  }
+  var ok1 = FoldCore.winAll(b, st.targets) && !early;
+  var n = FoldCore.countSolutions(start(st), st.targets, st.limit);
+  var ok2 = n === st.nsol;
+  var ok3 = true;
+  if (st.twinOf) {
+    var tw = null;
+    for (var k = 0; k < STAGES.length; k++) if (STAGES[k].id === st.twinOf) tw = STAGES[k];
+    ok3 = !reaches(st, tw.answer) && !reaches(tw, st.answer) && reaches(tw, tw.answer);
+  }
+  if (!(ok1 && ok2 && ok3)) bad++;
+  lines.push(st.id + ' answer=' + ok1 + ' nsol js=' + n + ' py=' + st.nsol + ' twin=' + ok3 + ((ok1 && ok2 && ok3) ? ' OK' : ' NG'));
+}
+lines.push(bad === 0 ? 'ALL OK' : ('NG ' + bad));
+document.getElementById('out').textContent = lines.join('\n');
+</script>
