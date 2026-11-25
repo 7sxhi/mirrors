@@ -8,3 +8,5 @@ body > preview.html
 body | sed 's#</body>#<script>setTimeout(function(){FoldDebug.replayAnswer();},300);</script>\n</body>#' > play_answer.html
 body | sed -e 's#<script src="../core.js">#<script>try{var c=JSON.parse(localStorage.getItem("fold3-cleared")||"{}");c.M9=true;localStorage.setItem("fold3-cleared",JSON.stringify(c));}catch(e){}</script>\n<script src="../core.js">#' \
   -e 's#</body>#<script>setTimeout(function(){document.getElementById("twin-replay").click();},300);</script>\n</body>#' > play_twin.html
+# play_answer_tw.html: 元の盤（本編9）を解いたことにして答えをなぞる（#sM10 で、解いたあとの文に両方の答えが出るかを見る）
+sed -e 's#<script src="../core.js">#<script>try{var c=JSON.parse(localStorage.getItem("fold3-cleared")||"{}");c.M9=true;localStorage.setItem("fold3-cleared",JSON.stringify(c));}catch(e){}</script>\n<script src="../core.js">#' play_answer.html > play_answer_tw.html

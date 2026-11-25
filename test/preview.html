@@ -186,9 +186,10 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: 2.1rem; lett
 .status.win { color: var(--ok); }
 .status.lose { color: var(--warn); }
 .status.tip { color: var(--accent); }
-.log { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.log { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 0; padding: 0; list-style: none; }
 .log:empty { display: none; }
-.log li { font-size: 0.8rem; padding: 2px 8px; border-radius: 12px; border: 1px solid var(--paper-edge); background: var(--paper); font-variant-numeric: tabular-nums; }
+.log li { position: relative; font-size: 0.85rem; font-weight: 700; min-width: 1.2em; text-align: center; padding: 2px 8px; border-radius: 12px; border: 1px solid var(--paper-edge); background: var(--paper); font-variant-numeric: tabular-nums; }
+.log li + li::before { content: '\2192'; position: absolute; left: -16px; top: 50%; transform: translateY(-50%); font-weight: 400; color: var(--muted); }
 .ctls { display: flex; flex-wrap: wrap; gap: 8px; }
 .ctl { font: inherit; font-weight: 700; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); cursor: pointer; }
 .ctl.main { background: var(--ink); color: var(--paper); }
@@ -298,7 +299,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: 2.1rem; lett
       <li>3色では重ねる順で結果が変わる。赤3に青1が重なると赤2、そこへ黄2が来ると両方消える。先に青1と黄2が重なると黄1、そこへ赤3が来ると赤2が残る。1色・2色では順を入れ替えても同じになる。</li>
       <li><span class="tag-o">順</span> の付いた面は、どの解も、となり合う縦と横の折りを入れ替えると通らない。<span class="tag-c">打消</span> の付いた面は、打ち消しを使わないと目標に届かない。<span class="tag-h">ひび</span> の面は、別の面（元の盤）と1マスだけ違う盤で、元の盤の答えはそのままでは通らない。</li>
       <li>「消」の札は、その色のマスを盤から1枚残らず消す目標（打ち消しでしか消えない）。</li>
-      <li>つまみの数字は、紙の左端（上端）から何マス目の線か。折った順の「縦2」は左から2マス目の縦線のこと。</li>
+      <li>つまみの字が折り線の名前。縦の線は左から 1・2・3…、横の線は上から A・B・C…。名前は最初の紙で決まり、折っても変わらない。折った順の「2 → B」は、縦の線2で折ってから横の線Bで折ったこと。</li>
       <li>どの面からでも遊べる。解いた面には「済」が付く（このブラウザに覚える）。</li>
     </ul>
     <button class="ctl" id="help-close" type="button">閉じる</button>
@@ -378,7 +379,18 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: 2.1rem; lett
     if (!code) return '';
     return '<div class="tile c' + colorOf(code) + '" style="font-size:' + fs + 'px"><span class="k">' + COLOR[colorOf(code)] + '</span>' + valOf(code) + '</div>';
   }
-  function moveLabel(m) { return (m[0] === 'V' ? '縦' : '横') + m[1]; }
+  // 折り線の名前は最初の紙で決める: 縦の線は左から 1・2・3…、横の線は上から A・B・C…（折っても名前は変わらない）
+  function lineName(t, n) { return t === 'V' ? String(n) : String.fromCharCode(64 + n); }
+  // 手順 moves（各手は今の盤での位置）を最初の盤から折りながら、線の名前の並びにする
+  function moveNames(st, moves) {
+    var b = startBoard(st), out = [];
+    for (var i = 0; i < moves.length; i++) {
+      var m = moves[i];
+      out.push(lineName(m[0], m[1] + (m[0] === 'V' ? b.ox : b.oy)));
+      b = FoldCore.fold(b, m);
+    }
+    return out;
+  }
   function stage() { return STAGES[S.stage]; }
   function stageName(s) { return GROUP[s.group][0] + ' ' + s.label; }
   function indexOfId(id) { for (var i = 0; i < STAGES.length; i++) if (STAGES[i].id === id) return i; return -1; }
@@ -468,10 +480,12 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: 2.1rem; lett
     var dis = canFold() ? '' : ' disabled', h2 = TS / 2;
     var tstyle = 'width:' + TS + 'px;height:' + TS + 'px;font-size:' + Math.max(9, Math.round(TS * 0.42)) + 'px;';
     for (var k = 1; k < b.w; k++) {
-      html.push('<button type="button" class="tab" data-t="V" data-k="' + k + '" aria-label="縦の折り線 ' + k + '" style="' + tstyle + 'left:' + (px + k * cs - h2) + 'px;top:' + (py - 32) + 'px"' + dis + '>' + k + '</button>');
+      var nv = lineName('V', b.ox + k);
+      html.push('<button type="button" class="tab" data-t="V" data-k="' + k + '" aria-label="縦の折り線 ' + nv + '" style="' + tstyle + 'left:' + (px + k * cs - h2) + 'px;top:' + (py - 32) + 'px"' + dis + '>' + nv + '</button>');
     }
     for (k = 1; k < b.h; k++) {
-      html.push('<button type="button" class="tab" data-t="H" data-k="' + k + '" aria-label="横の折り線 ' + k + '" style="' + tstyle + 'left:' + (px - 32) + 'px;top:' + (py + k * cs - h2) + 'px"' + dis + '>' + k + '</button>');
+      var nh = lineName('H', b.oy + k);
+      html.push('<button type="button" class="tab" data-t="H" data-k="' + k + '" aria-label="横の折り線 ' + nh + '" style="' + tstyle + 'left:' + (px - 32) + 'px;top:' + (py + k * cs - h2) + 'px"' + dis + '>' + nh + '</button>');
     }
     html.push('<div class="pv-layer" id="pv"></div>');
     boardEl.innerHTML = html.join('');
@@ -590,7 +604,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: 2.1rem; lett
     note.hidden = nt.length === 0;
 
     var lg = [];
-    for (var j = 0; j < S.log.length; j++) lg.push('<li>' + (j + 1) + '. ' + moveLabel(S.log[j]) + '</li>');
+    var names = moveNames(st, S.log);
+    for (var j = 0; j < names.length; j++) lg.push('<li>' + names[j] + '</li>');
     document.getElementById('log').innerHTML = lg.join('');
     document.getElementById('undo').disabled = S.busy || S.log.length === 0;
     document.getElementById('reset').disabled = S.busy || S.log.length === 0;
@@ -611,7 +626,7 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: 2.1rem; lett
       txt += '。でたらめに折って届く確率は ' + pct(st.prand) + '。';
       if (st.swapTot) txt += '解の中のとなり合う縦と横の折りを入れ替えると、' + st.swapTot + ' 通りのうち ' + st.swapFail + ' 通りが通らない' + (st.swapFail ? '（3色の重ねる順が効いている）' : '') + '。';
       txt += 'この盤の1マスだけを変えた盤では、' + Math.round(st.wipe * 100) + '% で、ここの解がすべて通らなくなる。';
-      if (tw && S.cleared[tw.id]) txt += ' 元の盤の答えは ' + tw.answer.map(moveLabel).join('→') + '、ここの答えは ' + st.answer.map(moveLabel).join('→') + '。';
+      if (tw && S.cleared[tw.id]) txt += ' 元の盤の答えは ' + moveNames(tw, tw.answer).join(' → ') + '、ここの答えは ' + moveNames(st, st.answer).join(' → ') + '。';
       var n = clearedCount();
       if (n === STAGES.length) txt += ' これで全 ' + STAGES.length + ' 面を解いた。';
       document.getElementById('after').textContent = txt;
