@@ -93,8 +93,10 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: 2.1rem; lett
   border-radius: 8px; padding: 6px 2px; min-height: 54px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; min-width: 0;
 }
 .stage-btn .nm { font-weight: 700; font-size: 0.95rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.stage-btn .sz { font-size: 0.66rem; color: var(--muted); line-height: 1.25; text-align: center; }
-.stage-btn .sz span { white-space: nowrap; }
+.stage-btn .sz { font-size: 0.66rem; color: var(--muted); line-height: 1.25; text-align: center; max-width: 100%; }
+/* 札は「大きさ」「名前」「印」を1行ずつ。名前は語の切れ目（wbr）でだけ折り返し、それでもはみ出すときだけ字の間で折る */
+.stage-btn .sz > span { display: block; word-break: keep-all; overflow-wrap: anywhere; }
+.stage-btn .sz .mk span { white-space: nowrap; }
 .tag-c { color: var(--warn); font-weight: 700; }
 .tag-h { color: var(--diff); font-weight: 700; }
 .tag-o { color: var(--accent); font-weight: 700; }
@@ -640,6 +642,8 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: 2.1rem; lett
     }
   }
 
+  // 面選びの札の名前の折り返してよい所
+  var TAG_WBR = { '消して作る': '消して<wbr>作る', '消して二つ': '消して<wbr>二つ', '二色消し': '二色<wbr>消し', '消し切り': '消し<wbr>切り', '大きい盤': '大きい<wbr>盤' };
   function renderSelect() {
     var html = [], last = load(KEY_LAST);
     for (var g = 1; g <= 4; g++) {
@@ -647,10 +651,13 @@ h1 { font-family: var(--font-display); font-weight: 400; font-size: 2.1rem; lett
       for (var i = 0; i < STAGES.length; i++) {
         var s = STAGES[i];
         if (s.group !== g) continue;
-        var tags = (g === 1 ? s.colors.length + '色・' : '') + s.w + '×' + s.h + (s.tag ? ' ' + s.tag : '');
-        if (s.orderReq) tags += ' <span class="tag-o">順</span>';
-        if (s.cancelReq) tags += ' <span class="tag-c">打消</span>';
-        if (s.twinOf) tags += ' <span class="tag-h">ひび</span>';
+        var tags = '<span>' + (g === 1 ? s.colors.length + '色・' : '') + s.w + '×' + s.h + '</span>';
+        if (s.tag) tags += '<span>' + (TAG_WBR[s.tag] || s.tag) + '</span>';
+        var mk = [];
+        if (s.orderReq) mk.push('<span class="tag-o">順</span>');
+        if (s.cancelReq) mk.push('<span class="tag-c">打消</span>');
+        if (s.twinOf) mk.push('<span class="tag-h">ひび</span>');
+        if (mk.length) tags += '<span class="mk">' + mk.join(' ') + '</span>';
         btns.push('<button type="button" class="stage-btn' + (S.cleared[s.id] ? ' cleared' : '') + (s.id === last ? ' last' : '') + '" data-i="' + i + '" aria-label="' + stageName(s) + (S.cleared[s.id] ? ' 解いた' : '') + '"><span class="nm">' + s.label + '</span><span class="sz">' + tags + '</span></button>');
       }
       if (!btns.length) continue;
